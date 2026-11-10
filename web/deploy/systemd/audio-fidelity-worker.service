@@ -1,0 +1,30 @@
+[Unit]
+Description=Audio fidelity demo inference worker (RQ, host engine)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/srv/audio-demo
+EnvironmentFile=/srv/audio-demo/.env
+Environment=PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 LANG=C.UTF-8
+ExecStart=/srv/audio-demo/.venv-worker/bin/python -m webapp.worker
+Restart=always
+RestartSec=5
+# Graceful stop: SIGTERM goes to the RQ worker only, which finishes the current
+# job (warm shutdown); whatever is left in the cgroup (engine process groups)
+# is SIGKILLed after the worker exits or the timeout (> ENGINE_TIMEOUT_SECONDS).
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=900
+MemoryMax=3G
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+ReadWritePaths=/srv/audio-demo/data
+
+[Install]
+WantedBy=multi-user.target

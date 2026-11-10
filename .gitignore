@@ -1,0 +1,25 @@
+# ---- secrets / local config (never commit) ----
+.env
+讯飞配置.json
+听悟配置.json
+*.pem
+*_key
+*.key
+
+# ---- engine runtime (models, audio, caches, outputs, venv) ----
+engine/.venv*/
+engine/models/*
+!engine/models/.gitkeep
+engine/audio/**
+!engine/audio/*/
+!engine/audio/原音频/.gitkeep
+engine/output/*
+!engine/output/.gitkeep
+engine/tmp/*
+!engine/tmp/patch_emphases.py
+
+# ---- python ----
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv*/

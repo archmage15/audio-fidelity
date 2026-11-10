@@ -1,0 +1,32 @@
+[Unit]
+Description=Audio fidelity persistent engine (models loaded once, one job at a time)
+After=network-online.target
+Wants=network-online.target
+Before=audio-fidelity-worker.service
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/srv/audio-demo
+EnvironmentFile=/srv/audio-demo/.env
+Environment=PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 LANG=C.UTF-8
+# ENGINE_PYTHON from .env, else the engine's own venv ($$ = literal $ for the shell).
+ExecStart=/bin/sh -c 'exec "$${ENGINE_PYTHON:-$${ENGINE_ROOT}/.venv-linux/bin/python}" -m webapp.engine_server'
+# The worker SIGKILLs this process when a job exceeds its deadline; systemd then
+# restarts it (models reload + warm-up, about a minute).
+Restart=always
+RestartSec=3
+# Graceful stop: an idle server exits at once, a busy one after the current job.
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=900
+MemoryMax=4G
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+ReadWritePaths=/srv/audio-demo/data
+
+[Install]
+WantedBy=multi-user.target

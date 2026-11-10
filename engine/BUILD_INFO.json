@@ -1,0 +1,173 @@
+{
+  "name": "audio-fidelity-linux",
+  "release_date": "2026-11-03",
+  "platform": "Linux x86_64",
+  "python": "3.12 or 3.13",
+  "device": "CPU",
+  "max_logical_cpus": 3,
+  "spare_logical_cpus_when_possible": 1,
+  "models_included": false,
+  "credentials_included": false,
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 18,
+      "sha256": "dedcf86152f6e57ccca76888e904a8268e4a7567b3e628f0429d4ce5608eb892"
+    },
+    {
+      "path": "Linux使用说明.md",
+      "bytes": 5101,
+      "sha256": "d7291b3ca3a148f49da53321cee08d85a7ce14ecd50b5af30ddc35536b0b1ccb"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2451,
+      "sha256": "ca90caa9ad4cec69cf1bdca6981298aef62d6cd2beae81d31170fb718c0cba0d"
+    },
+    {
+      "path": "cache_audio.py",
+      "bytes": 2618,
+      "sha256": "2f1d01677eaffd58569a413f8d539127ff9511ba34f52d14ef95cf4dd3c0970d"
+    },
+    {
+      "path": "evaluate.py",
+      "bytes": 1949,
+      "sha256": "cd85dd86ed62eeadff19c933afc6fb2dc3a622cf536f858e1de64fd49224ed8c"
+    },
+    {
+      "path": "linux.sh",
+      "bytes": 6159,
+      "sha256": "1bcaf064fcd0bb6ae274913f24a90159cf7c5df6740580ccc545b8d36c1afa82"
+    },
+    {
+      "path": "requirements-linux.txt",
+      "bytes": 323,
+      "sha256": "a00c8bfececd11dce4180efb7472b96dde8420133e0913cb000907b6c3cd17fb"
+    },
+    {
+      "path": "scripts/analyze_reference.py",
+      "bytes": 15815,
+      "sha256": "242cf4a5de29b5a366521a604559d6b42e4a8c135517e1da947fb10aaa7818de"
+    },
+    {
+      "path": "scripts/audio_paths.py",
+      "bytes": 5920,
+      "sha256": "b8e1bb8d8c6f292a78bd855518ed396fb2ee285ab94aa14d8dd2f61414b91e70"
+    },
+    {
+      "path": "scripts/compare_long.py",
+      "bytes": 62090,
+      "sha256": "9356d261bd325d436defce76d57ea3b145a41461e440fed6509d6a4e9fc23d3e"
+    },
+    {
+      "path": "scripts/compare_phoneme.py",
+      "bytes": 59341,
+      "sha256": "c0b7b54745487bf25d64a6436fed805ee8315c927520d4265d15267ab65f079e"
+    },
+    {
+      "path": "scripts/compare_rhythm.py",
+      "bytes": 42660,
+      "sha256": "2307ed59221ab802b4fc01542d539d53ce165b04262ffae6b254ce8a9c4360b3"
+    },
+    {
+      "path": "scripts/console_runtime.py",
+      "bytes": 1698,
+      "sha256": "eb8af67a1f535338a1b69703fd839c3bc0cb5269092153c26fadd58509e39a53"
+    },
+    {
+      "path": "scripts/cpu_runtime.py",
+      "bytes": 4849,
+      "sha256": "c83973fa4372b5c21d3704bb81ad9176ce3dc75e3bfdf7060975ff8b38844ee0"
+    },
+    {
+      "path": "scripts/download_models.py",
+      "bytes": 2450,
+      "sha256": "4fdc6bd776e6fc5eac887f9209c6eb9cbb8f7c75fd31e6317654f6df217bda89"
+    },
+    {
+      "path": "scripts/emphases_stress.py",
+      "bytes": 3344,
+      "sha256": "f7007324a66a35446e3302653bee0cb4757463a0119b9818008337268ff97255"
+    },
+    {
+      "path": "scripts/gen_ref_phonemes.py",
+      "bytes": 21466,
+      "sha256": "d474d7f38c56cc08cafe0409741c468a92284a998d16af5dbf7705b60755e147"
+    },
+    {
+      "path": "scripts/linux_check.py",
+      "bytes": 2865,
+      "sha256": "176decc060df0454d3343e3201d9093c0f324793f08c616f2295a3d43f4dbc3a"
+    },
+    {
+      "path": "scripts/logkit.py",
+      "bytes": 8319,
+      "sha256": "0d3024a98ce6b289921192e232ecbd05483745ea406ef28587e2de151a188bf8"
+    },
+    {
+      "path": "scripts/overall_score.py",
+      "bytes": 38866,
+      "sha256": "c0d3710078651049df777392d566168a6cc4bab75c5c0927e38c502a02a815a8"
+    },
+    {
+      "path": "scripts/path_jobs.py",
+      "bytes": 10029,
+      "sha256": "2a35c78e039f85199521e00ad158abaf962e4908ee2684649a7a28aaf618ebd9"
+    },
+    {
+      "path": "scripts/platform_tools.py",
+      "bytes": 2334,
+      "sha256": "ee27f3eae14951ca8908a0bf835063667a744427a9a4a5d46c0a83d3c8b69d2e"
+    },
+    {
+      "path": "scripts/punctuate.py",
+      "bytes": 5813,
+      "sha256": "f8c5bd75d65c7271293956f84b3bbd12e4e18e49a66313b7dd1995f53c5ca8e6"
+    },
+    {
+      "path": "scripts/run_all.py",
+      "bytes": 7309,
+      "sha256": "e2956e51aa56f5e19167bf7bb4a8b06e965ac8ea571b8eea041cdf4e0d90efd1"
+    },
+    {
+      "path": "scripts/selftest.py",
+      "bytes": 65836,
+      "sha256": "400b3d04e911279bfabe43d3f2eb49941b486575039e9b38d3904f8e875846b8"
+    },
+    {
+      "path": "scripts/transcript_fix.py",
+      "bytes": 3962,
+      "sha256": "9211a8595e7a9c6957e01c2ef1849054b2ef05279703d6e5bfea4f456d51a9f8"
+    },
+    {
+      "path": "scripts/xunfei_transcribe.py",
+      "bytes": 10846,
+      "sha256": "fa38866153f33b94b992572491a1742ef10c8654fcb3d03c5189513ec0f11bd4"
+    },
+    {
+      "path": "tests/test_dynamic_paths.py",
+      "bytes": 5277,
+      "sha256": "5f43602d54eb3e9742e74be1591fd20980d23e3f6e200361d91678e46beb4bb8"
+    },
+    {
+      "path": "tests/test_platform_support.py",
+      "bytes": 4369,
+      "sha256": "313761ec947c19a7491ae5563a5b9711f34a41af304cdede317da0a294f4f636"
+    },
+    {
+      "path": "tmp/patch_emphases.py",
+      "bytes": 3994,
+      "sha256": "dba3a23bc4e73b9c451649f48f0fa5a5538570707cc05cb453c7d1ecdc80b25f"
+    },
+    {
+      "path": "动态路径使用说明.md",
+      "bytes": 4583,
+      "sha256": "e164fbb9018f7316fef25d3f4e3a28fd21c6663ac01857b5cddcbfa132023def"
+    },
+    {
+      "path": "讯飞配置.example.json",
+      "bytes": 39,
+      "sha256": "a1eb4e0361b279bb5a9464316356693f35c025ec1d75929c2f356de291b39eab"
+    }
+  ]
+}

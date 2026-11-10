@@ -1,0 +1,12 @@
+# Linux x86_64, CPython >=3.12. The CPU wheel index is required for +cpu builds.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.11.0+cpu
+torchaudio==2.11.0+cpu
+soundfile==0.14.0
+numpy==2.5.3
+matplotlib==3.11.2
+wordninja==2.0.0
+transformers==5.17.0
+huggingface-hub==1.31.0
+emphases==0.0.2
+filelock>=3.13,<5

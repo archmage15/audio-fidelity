@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>音频还原度测试</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5f5b'/%3E%3Cpath d='M7 18v-4M11 22V10M15 25V7M19 20v-8M23 23V9M27 17v-2' stroke='%23f6f1e7' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- 登录 -->
+  <main id="login-view" class="login" hidden>
+    <div class="login-card">
+      <div class="brand brand-lg"><span class="brand-mark" aria-hidden="true"></span>音频还原度测试</div>
+      <p class="muted">输入收到的邀请码开始试用。邀请码即你的个人身份，请勿转发。</p>
+      <form id="login-form" autocomplete="off">
+        <label class="field">
+          <span>邀请码</span>
+          <input id="invite-code" name="invite" inputmode="text" autocapitalize="characters"
+                 placeholder="XXXX-XXXX-XXXX" required minlength="4" maxlength="64">
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">进入</button>
+        <p id="login-error" class="form-error" hidden></p>
+      </form>
+    </div>
+  </main>
+
+  <!-- 主页面 -->
+  <div id="app-view" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>音频还原度测试<span class="tag">Demo</span></div>
+      <div class="who">
+        <span id="user-name"></span>
+        <span id="admin-badge" class="tag tag-accent" hidden>管理员</span>
+        <button id="logout" class="btn btn-ghost btn-sm" type="button">退出</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <!-- 1 原音频 -->
+      <section class="card" id="step-ref" aria-labelledby="h-ref">
+        <div class="card-head">
+          <h2 id="h-ref"><span class="step">1</span>选择原音频</h2>
+          <span class="muted small" id="ref-count"></span>
+        </div>
+        <p class="muted small ref-tip">点 <span class="kbd-play" aria-hidden="true"></span> 试听，点击条目选择要模仿的原音频。</p>
+        <label class="ref-filter" id="ref-filter-wrap" hidden>
+          <span class="visually-hidden">筛选原音频</span>
+          <input id="ref-filter" type="search" placeholder="按名称或原文筛选" autocomplete="off">
+        </label>
+        <div id="ref-empty" class="empty" hidden>暂时没有可用的原音频，请联系管理员添加素材。</div>
+        <ul id="ref-list" class="ref-list" role="radiogroup" aria-labelledby="h-ref"></ul>
+        <audio id="ref-player" preload="none" hidden></audio>
+
+        <details id="admin-ref" class="admin-box" hidden>
+          <summary>上传新原音频（管理员）</summary>
+          <p class="note">上传后会自动转写并缓存分析结果，<strong>转写调用讯飞云服务，会消耗服务额度</strong>。缓存完成前不能用于评测。</p>
+          <form id="ref-form">
+            <label class="field"><span>音频文件</span><input id="ref-file" type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a,.webm" required></label>
+            <label class="field"><span>显示名称</span><input id="ref-name" maxlength="120" required placeholder="如：Lesson 1 第 3 句"></label>
+            <label class="check"><input id="ref-public" type="checkbox" checked> 对所有试用者公开</label>
+            <button class="btn btn-primary" type="submit">上传并准备</button>
+          </form>
+          <ul id="pending-refs" class="pending-list"></ul>
+        </details>
+      </section>
+
+      <!-- 2 我的模仿 -->
+      <section class="card" id="step-imit" aria-labelledby="h-imit">
+        <h2 id="h-imit"><span class="step">2</span>我的模仿</h2>
+        <div id="target-none" class="empty">请先在上方选择一段原音频。</div>
+        <div id="target" class="target" hidden>
+          <button type="button" class="play-btn play-lg" id="target-play" aria-label="播放原音频"><span class="icon-play"></span></button>
+          <div class="target-body">
+            <div class="target-label">正在模仿 · <span id="target-name"></span> <span class="muted" id="target-dur"></span></div>
+            <p class="target-text" id="target-text"></p>
+            <div class="progress-line"><span id="target-progress"></span></div>
+          </div>
+        </div>
+        <div class="segmented" role="tablist">
+          <button type="button" role="tab" id="tab-upload" aria-selected="true" data-mode="upload">上传文件</button>
+          <button type="button" role="tab" id="tab-record" aria-selected="false" data-mode="record">麦克风录音</button>
+        </div>
+
+        <div id="pane-upload" class="pane">
+          <label class="dropzone" id="dropzone">
+            <input id="imit-file" type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a,.mp4,.webm">
+            <span class="dz-title">选择或拖入音频文件</span>
+            <span class="dz-sub dz-auto">上传完成后自动开始评测</span>
+            <span class="dz-sub" id="upload-limits"></span>
+          </label>
+        </div>
+
+        <div id="pane-record" class="pane" hidden>
+          <p class="note">录音前请<strong>戴上耳机</strong>，避免原音频的声音被麦克风录进去。开始录音时会自动暂停页面里的原音频。</p>
+          <div class="recorder">
+            <button type="button" id="rec-btn" class="rec-btn" aria-label="开始录音"><span class="rec-dot"></span></button>
+            <div class="rec-info">
+              <div class="rec-time"><span id="rec-time">00:00</span><span class="muted" id="rec-max"></span></div>
+              <div class="meter" aria-hidden="true"><span id="rec-level"></span></div>
+              <div class="muted small" id="rec-hint">点击红色按钮开始录音</div>
+            </div>
+          </div>
+          <div id="rec-preview" class="rec-preview" hidden>
+            <audio id="rec-audio" controls></audio>
+            <div class="row">
+              <button type="button" class="btn btn-primary" id="rec-upload">上传并评测</button>
+              <button type="button" class="btn" id="rec-redo">重录</button>
+              <button type="button" class="btn btn-ghost" id="rec-discard">删除</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="imit-ready" class="asset-chip" hidden>
+          <div class="asset-meta">
+            <span class="asset-name" id="imit-name"></span>
+            <span class="muted small" id="imit-info"></span>
+          </div>
+          <audio id="imit-audio" controls preload="none"></audio>
+          <button type="button" class="btn btn-ghost btn-sm" id="imit-remove">删除</button>
+        </div>
+        <div id="upload-progress" class="progress" hidden><span></span></div>
+      </section>
+
+      <!-- 3 开始评测 -->
+      <section class="card" id="step-submit" aria-labelledby="h-submit">
+        <h2 id="h-submit"><span class="step">3</span>评测</h2>
+        <button type="button" id="submit-btn" class="btn btn-primary btn-lg" disabled>开始评测</button>
+        <p class="muted small" id="submit-hint">先选择原音频，上传或录制模仿后会自动开始评测。</p>
+        <div id="job-status" class="job-status" hidden>
+          <div class="status-head">
+            <span id="job-chip" class="chip"></span>
+            <span class="muted small" id="job-id"></span>
+          </div>
+          <ol class="stages" id="stages">
+            <li data-stage="queued">排队</li>
+            <li data-stage="normalizing">音频转换</li>
+            <li data-stage="evaluating">评测</li>
+            <li data-stage="saving">保存结果</li>
+          </ol>
+          <div class="timers">
+            <span>处理耗时 <strong id="t-elapsed">—</strong></span>
+            <span id="t-queue-wrap">排队 <strong id="t-queue">—</strong></span>
+          </div>
+          <p class="note small">评测通常需要 10–20 秒，排队时会更久。可以离开页面，回来后在“最近任务”里查看。</p>
+          <div id="job-error" class="error-box" hidden></div>
+        </div>
+      </section>
+
+      <!-- 4 结果 -->
+      <section class="card" id="step-result" aria-labelledby="h-result" hidden>
+        <h2 id="h-result"><span class="step">4</span>结果</h2>
+        <div class="result-top">
+          <div class="score-ring" id="score-ring">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+              <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <div class="score-num"><strong id="score-overall">—</strong><span>综合还原度</span></div>
+          </div>
+          <div class="parts" id="parts"></div>
+        </div>
+        <div id="result-grade" class="grade"></div>
+        <div id="result-warnings"></div>
+        <div class="advice" id="advice-wrap">
+          <h3>下一步怎么练</h3>
+          <ul id="advice"></ul>
+        </div>
+        <div class="metrics" id="result-metrics"></div>
+        <div class="playback">
+          <div><div class="label">原音频</div><audio id="res-ref-audio" controls preload="none"></audio></div>
+          <div><div class="label">我的模仿</div><audio id="res-imit-audio" controls preload="none"></audio></div>
+        </div>
+        <div id="charts" class="charts"></div>
+        <div class="row" id="report-actions">
+          <button type="button" class="btn" id="report-toggle">查看详细报告</button>
+          <a class="btn btn-ghost" id="report-download" href="#" download>下载报告</a>
+          <a class="btn btn-ghost" id="detail-download" href="#" download hidden>下载逐音明细</a>
+        </div>
+        <pre id="report-text" class="report" hidden></pre>
+      </section>
+
+      <!-- 5 最近任务 -->
+      <section class="card" id="step-history" aria-labelledby="h-history">
+        <div class="card-head">
+          <h2 id="h-history"><span class="step">5</span>最近任务</h2>
+          <button type="button" class="btn btn-ghost btn-sm" id="history-refresh">刷新</button>
+        </div>
+        <ul id="history" class="history"></ul>
+        <button type="button" class="btn btn-ghost btn-block" id="history-more" hidden>加载更多</button>
+      </section>
+
+      <!-- 转写服务（管理员） -->
+      <section class="card" id="asr-settings" aria-labelledby="h-asr" hidden>
+        <div class="card-head">
+          <h2 id="h-asr"><span class="step step-admin" aria-hidden="true">管</span>转写服务</h2>
+          <span class="muted small" id="asr-updated"></span>
+        </div>
+        <p class="muted small asr-tip">准备原音频时用它转写原文；评测时也用它转写模仿录音，做单词级纠音（不影响打分）。切换后对之后开始的任务生效，已准备好的原音频不会重新转写。</p>
+        <div id="asr-options" class="asr-options" role="radiogroup" aria-labelledby="h-asr"></div>
+      </section>
+
+      <!-- 邀请管理（管理员） -->
+      <section class="card" id="invites" aria-labelledby="h-invites" hidden>
+        <div class="card-head">
+          <h2 id="h-invites"><span class="step step-admin" aria-hidden="true">管</span>邀请管理</h2>
+          <button type="button" class="btn btn-ghost btn-sm" id="users-refresh">刷新</button>
+        </div>
+        <form id="invite-form" class="invite-form" autocomplete="off">
+          <label class="field invite-name">
+            <span>试用者姓名或备注</span>
+            <input id="invite-name" maxlength="60" required placeholder="如：张三 / 合作方 A">
+          </label>
+          <label class="check"><input id="invite-is-admin" type="checkbox"> 设为管理员</label>
+          <button class="btn btn-primary" type="submit">创建邀请</button>
+        </form>
+        <div id="invite-result" class="invite-result" hidden>
+          <div class="label" id="invite-for"></div>
+          <div class="invite-code" id="invite-code-out"></div>
+          <div class="row">
+            <button type="button" class="btn btn-primary btn-sm" id="copy-code">复制邀请码</button>
+            <button type="button" class="btn btn-sm" id="copy-message">复制邀请消息</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="invite-dismiss">完成</button>
+          </div>
+          <p class="muted small">邀请码只显示这一次（服务器只保存其哈希），请现在复制发给对方。邀请消息里的链接打开后会自动填好邀请码。</p>
+        </div>
+        <ul id="user-list" class="user-list"></ul>
+      </section>
+    </main>
+    <footer class="foot muted small">评分为程序自动评测结果，仅供练习参考。语调目前只作可视化参考，不计分。</footer>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Host worker venv (/srv/audio-demo/.venv-worker). Only the queue client:
+# inference runs in a subprocess with the engine's ENGINE_PYTHON.
+redis==8.1.0
+rq==3.0.0

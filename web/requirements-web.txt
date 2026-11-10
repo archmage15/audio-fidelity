@@ -1,0 +1,9 @@
+# Website / queue dependencies (installed in the image at /opt/web).
+# The inference dependencies stay in the engine's own .venv-linux (ENGINE_PYTHON).
+fastapi==0.162.0
+starlette==1.10.0
+pydantic==2.14.2
+uvicorn==0.54.0
+python-multipart==0.0.33
+redis==8.1.0
+rq==3.0.0
