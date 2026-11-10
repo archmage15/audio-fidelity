@@ -7,6 +7,10 @@
 | `engine/` | 评测引擎（Linux 分发包 `audio-fidelity-linux`，release 2026-11-03）：Wav2Vec2 音素识别、强制对齐、节奏/重音（emphases）、综合评分与报告；原音频转写（讯飞） | `engine/README.md`、`engine/Linux使用说明.md`、`engine/动态路径使用说明.md` |
 | `web/` | 网页 Demo：FastAPI + 原生 JS 前端、Redis/RQ 队列、常驻推理进程、讯飞/通义听悟转写切换、邀请码账号、管理员功能、部署脚本 | `web/README.md`、`web/docs/DEPLOY.md`、`web/docs/API.md` |
 
+## 参与开发
+
+先读 [docs/开发规范.md](docs/开发规范.md)：从 `develop` 切出 `feature/*` 分支开发，PR 合回 `develop`；只有 `develop` 和 `hotfix/*` 能合入 `main`。AI 智能体的入口说明见 `AGENTS.md` / `CLAUDE.md`。
+
 ## 仓库里没有的东西
 
 - **模型**（音素模型约 1.26 GB，另有重音、标点模型；完整环境建议预留 5 GB）：`cd engine && bash linux.sh setup --system-deps` 安装依赖后会调用 `scripts/download_models.py` 下载到 `engine/models/`。
