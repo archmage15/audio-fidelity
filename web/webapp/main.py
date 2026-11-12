@@ -591,8 +591,18 @@ def job_report(job_id: str, kind: str = 'summary', download: bool = False, user:
     text = sanitize_text(path.read_text(encoding='utf-8', errors='replace'), replacements)
     headers = {}
     if download:
-        name = f"{'还原度综合报告' if kind == 'summary' else '音素对比报告'}-{job_id}.txt"
-        headers['Content-Disposition'] = f"attachment; filename=\"report-{job_id}.txt\"; filename*=UTF-8''{quote(name)}"
+        if kind == 'json':
+            name = f"结构化评测报告-{job_id}.json"
+            headers['Content-Disposition'] = f"attachment; filename=\"report-{job_id}.json\"; filename*=UTF-8''{quote(name)}"
+        else:
+            name = f"{'还原度综合报告' if kind == 'summary' else '音素对比报告'}-{job_id}.txt"
+            headers['Content-Disposition'] = f"attachment; filename=\"report-{job_id}.txt\"; filename*=UTF-8''{quote(name)}"
+    if kind == 'json':
+        try:
+            payload = json.loads(text)
+        except ValueError:
+            raise APIError(500, 'report_invalid', '结构化报告无法读取。') from None
+        return JSONResponse(payload, headers=headers)
     return PlainTextResponse(text, headers=headers)
 
 

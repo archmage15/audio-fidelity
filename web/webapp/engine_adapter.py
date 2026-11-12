@@ -24,7 +24,7 @@ from .config import get_settings
 RUNNER = Path(__file__).resolve().with_name('engine_runner.py')
 SCORE_FILE = '还原度综合评分.json'
 REPORT_FILE = '还原度综合报告.txt'
-REPORT_FILES = {'summary': REPORT_FILE, 'detail': '音素对比_报告.txt'}
+REPORT_FILES = {'summary': REPORT_FILE, 'detail': '音素对比_报告.txt', 'json': 'report.json'}
 CHART_FILES = {'rhythm': '节奏对比.png', 'pitch': '音高对比.png'}
 PART_KEYS = {'发音': 'pronunciation', '音变': 'sound_changes', '节奏': 'rhythm', '重音位置': 'stress'}
 _ENV_DROP = ('REDIS_URL', 'REDIS_PASSWORD', 'SESSION_SECRET')

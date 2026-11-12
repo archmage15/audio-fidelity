@@ -30,6 +30,24 @@ with open(os.path.join(out, '还原度综合报告.txt'), 'w', encoding='utf-8')
     f.write(report)
 with open(os.path.join(out, '音素对比_报告.txt'), 'w', encoding='utf-8') as f:
     f.write('逐句明细（stub）\n路径 /root/secret/thing.wav\n')
+structured_report = {
+    'schema_version': 1,
+    'focus_sounds': ['θ', 's'],
+    'top_issues': [{'sentence': 2, 'word': 0, 'issue': 0}],
+    'sentences': [{
+        'index': 2, 'text': 'Thanks for the lesson.', 'missed': False,
+        'reference_ms': [3100, 5200], 'student_ms': [2900, 5600],
+        'words': [{
+            'text': 'Thanks', 'ipa': 'θ æ ŋ k s', 'student_ipa': 's æ ŋ k s',
+            'student_ms': [2900, 3350],
+            'issues': [{'category': 'sound_change', 'expected': 'θ', 'heard': 's',
+                        'what': 'θ 读成了 s', 'how': '路径 /root/secret/thing.wav'}],
+        }],
+        'hints': [{'category': 'prosody', 'text': '原音频在 lesson 后停了一下'}],
+    }],
+}
+with open(os.path.join(out, 'report.json'), 'w', encoding='utf-8') as f:
+    json.dump(structured_report, f, ensure_ascii=False, indent=2)
 png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==')
 for name in ('节奏对比.png', '音高对比.png'):
     open(os.path.join(out, name), 'wb').write(png)

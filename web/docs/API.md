@@ -48,7 +48,7 @@ Idempotency-Key: <浏览器生成的 UUID，重试时复用>
 | `GET /api/jobs/{id}` | 状态、阶段、耗时、指标、结果摘要 |
 | `GET /api/jobs?limit=20&before=<created_at>&type=evaluate` | 当前用户最近任务，`next_before` 翻页 |
 | `POST /api/jobs/{id}/retry` | 失败/超时任务新建一次尝试（准备原音频的重试仅管理员） |
-| `GET /api/jobs/{id}/report?kind=summary\|detail[&download=1]` | 路径脱敏后的文本报告；超过保留期 `410` |
+| `GET /api/jobs/{id}/report?kind=summary\|detail\|json[&download=1]` | 路径脱敏后的文本报告或结构化 JSON；超过保留期 `410` |
 | `GET /api/jobs/{id}/charts/{rhythm\|pitch}` | 节奏 / 音高对比 PNG |
 
 任务状态 `pending_enqueue → queued → running → succeeded | failed | timed_out`；阶段 `normalizing / preparing_reference / evaluating / saving / done`。
@@ -66,12 +66,14 @@ Idempotency-Key: <浏览器生成的 UUID，重试时复用>
     "parts": {"pronunciation": 87.8, "sound_changes": 100.0, "rhythm": 96.6, "stress": 100.0},
     "advice": ["..."], "warnings": [],
     "report_url": "/api/jobs/job_.../report",
-    "report_urls": {"summary": "...", "detail": "...?kind=detail"},
+    "report_urls": {"summary": "...", "detail": "...?kind=detail", "json": "...?kind=json"},
     "chart_urls": {"rhythm": "...", "pitch": "..."}, "files_available": true
   },
   "error": null
 }
 ```
+
+`kind=json` 返回 `report.json`（`schema_version` 当前为 `1`）。句子和单词时间戳单位为毫秒，格式为 `[start, end]`；不可用的时间戳或 IPA 为 `null`。`words[].issues[].category` 为 `pronunciation`、`sound_change` 或 `word`；节奏/重音提示使用 `hints[].category=prosody`。`focus_sounds` 最多列出 5 个高频问题音。`top_issues` 最多列出前 10 个问题引用：`sentence` 是原句 1 起始序号，`word` 和 `issue` 是句内从 0 开始的下标。
 
 - 分项缺失为 `null`（页面显示“暂无数据”），不按 0 分处理；不提供语调分。
 - 排队中返回 `queue_ahead`（前面的任务数）；失败时 `error: {code, message}`，管理员额外看到 `detail`（堆栈/引擎错误）。

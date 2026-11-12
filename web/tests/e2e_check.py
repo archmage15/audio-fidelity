@@ -135,6 +135,21 @@ def main() -> int:
         check('report has no server paths', not leaked, ' | '.join(leaked[:2]))
         detail = user.get(res['report_urls'].get('detail', res['report_url']))
         check('detail report readable', detail.status_code == 200)
+        structured_url = res['report_urls'].get('json')
+        check('structured report URL available', bool(structured_url))
+        structured = user.get(structured_url) if structured_url else None
+        if structured:
+            body = structured.json() if structured.status_code == 200 else {}
+            check('structured report schema', body.get('schema_version') == 1 and
+                  {'focus_sounds', 'top_issues', 'sentences'} <= body.keys())
+            check('structured report content and path redaction',
+                  body.get('sentences', [{}])[0].get('words', [{}])[0].get('issues', [{}])[0].get('how')
+                  == '路径 〈服务器路径〉')
+            downloaded = user.get(structured_url + '&download=1')
+            check('structured report downloads as JSON', downloaded.status_code == 200 and
+                  'report-' in downloaded.headers.get('content-disposition', '') and
+                  '.json' in downloaded.headers.get('content-disposition', ''))
+            check('other user cannot fetch structured report', user2.get(structured_url).status_code == 404)
         for name, url in res.get('chart_urls', {}).items():
             r = user.get(url)
             check(f'chart {name} png', r.status_code == 200 and r.content[:4] == b'\x89PNG')

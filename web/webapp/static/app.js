@@ -673,12 +673,16 @@ function renderResult(job, scroll) {
   const available = result.files_available !== false && result.report_url;
   $('#report-actions').hidden = !available;
   $('#report-text').hidden = true;
+  $('#structured-download').hidden = true;
   $('#report-toggle').textContent = '查看详细报告';
   if (available) {
     $('#report-download').href = withParam(result.report_url, 'download', 1);
     const detail = result.report_urls?.detail;
     $('#detail-download').hidden = !detail;
     if (detail) $('#detail-download').href = withParam(detail, 'download', 1);
+    const structured = result.report_urls?.json;
+    $('#structured-download').hidden = !structured;
+    if (structured) $('#structured-download').href = withParam(structured, 'download', 1);
   } else {
     $('#result-warnings').append(el('div', { class: 'warning', text: '详细报告和图表已超过保留期限被清理，分数仍可查看。' }));
   }
