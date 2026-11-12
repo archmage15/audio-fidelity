@@ -50,6 +50,7 @@ REF_CACHE_JSON = os.path.join(REF_DIR, "原音频缓存.json")   # 原音频分�
 REF_LOGITS_NPY = os.path.join(REF_DIR, "原音频_logits.npy")  # 原音频帧级 logits（强制对齐用）
 OUT_JSON = os.path.join(OUT_DIR, "音素对比.json")
 OUT_REPORT = os.path.join(OUT_DIR, "音素对比_报告.txt")
+STRUCTURED_REPORT = os.path.join(OUT_DIR, "report.json")
 RHYTHM_JSON = os.path.join(OUT_DIR, "节奏对比.json")   # 同单句版 schema，overall_score 直接读
 
 sys.path.insert(0, HERE)
@@ -311,23 +312,23 @@ def evaluate_sentence(sent, text_ph, mine, mine_frames, word_bounds, sent_susp):
                 tip += "　" + _g
             diff_items.append({"类型": "缺失", "词": label, "应读": ref_ph,
                                "实读": "", "类别": "未读出", "要领": tip,
-                               "后验": v.get("后验", 0)})
+                               "后验": v.get("后验", 0), "音素下标": v.get("下标")})
         elif cat == "读太轻":
             tip = "【要领】读对了但太轻，读清晰一点"
             diff_items.append({"类型": "替换", "词": label, "应读": ref_ph,
                                "实读": got, "类别": "读太轻", "要领": tip,
-                               "后验": v.get("后验", 0)})
+                               "后验": v.get("后验", 0), "音素下标": v.get("下标")})
         elif cat == "口音型":
             tip = cp.L2_CONFUSIONS.get((ref_ph, got), "") or cp.phoneme_tips(ref_ph)
             diff_items.append({"类型": "替换", "词": label, "应读": ref_ph,
                                "实读": got, "类别": "口音型",
                                "要领": ("【口音型】%s → %s：%s" % (ref_ph, got, tip)) if tip else "",
-                               "后验": v.get("后验", 0)})
+                               "后验": v.get("后验", 0), "音素下标": v.get("下标")})
         else:  # 其他替换
             tip = cp.phoneme_tips(ref_ph)
             diff_items.append({"类型": "替换", "词": label, "应读": ref_ph,
                                "实读": got, "类别": "替换", "要领": tip,
-                               "后验": v.get("后验", 0)})
+                               "后验": v.get("后验", 0), "音素下标": v.get("下标")})
 
     # 碎句（转写把一句拆成 "There."+"Are..."）：不判漏句、不计分
     ignored = len(sent_ref) < MIN_SENT_PH
@@ -960,6 +961,8 @@ def main():
     pauses_m_all = cr.find_boundary_pauses(blocks_m_all)[0] if blocks_m_all else []
     nr = {i + 1: "+".join(b["词"]) for i, b in enumerate(blocks_r_all)}
     nm = {i + 1: "+".join(b["词"]) for i, b in enumerate(blocks_m_all)}
+    stress_by_sentence = build_per_sentence_stress(
+        block_sent_map, marked_r, marked_m, nr, nm, sent_results)
     rhythm_payload = {
         "节奏": {
             "数据源": "compare_long.py 逐句对称词块（长音频模式）",
@@ -986,8 +989,7 @@ def main():
             "逐词分数": {"原音频": [round(float(s), 4) for s in scores_r],
                          "我的": [round(float(s), 4) for s in scores_m]},
             "块序号到句号": block_sent_map,
-            "按句重音": build_per_sentence_stress(
-                block_sent_map, marked_r, marked_m, nr, nm, sent_results),
+            "按句重音": stress_by_sentence,
             "说明": "长音频模式：emphases 逐词 prominence 分数，> 阈值判重读",
         },
         "词表": {"原音频": [{"词": b["词"], "start_ms": b["start_ms"], "end_ms": b["end_ms"],
@@ -1001,6 +1003,128 @@ def main():
     }
     with open(RHYTHM_JSON, "w", encoding="utf-8") as f:
         json.dump(rhythm_payload, f, ensure_ascii=False, indent=2)
+
+    # ---- 结构化机器报告（独立于旧 TXT / JSON 报告 schema）----
+    from structured_report import build_report
+
+    def _frame_interval(frame_ids, frame_values):
+        times = [frame_values[i] * cp.FRAME_MS for i in frame_ids
+                 if 0 <= i < len(frame_values)]
+        return ([int(min(times)), int(max(times) + cp.FRAME_MS)] if times else None)
+
+    sentence_hints = {}
+    for item in items:
+        if item.get("判定") == "差不多":
+            continue
+        sid = block_sent_map.get(item.get("序号"))
+        if sid is not None:
+            sentence_hints.setdefault(sid, []).append({
+                "category": "prosody",
+                "text": "%s：%s" % (item.get("块", "词块"), item["判定"]),
+            })
+    for row in stress_by_sentence:
+        parts = []
+        if row.get("漏读重音"):
+            parts.append("漏读重音：" + ", ".join(row["漏读重音"]))
+        if row.get("多读重音"):
+            parts.append("多读重音：" + ", ".join(row["多读重音"]))
+        if parts:
+            sentence_hints.setdefault(row["句号"], []).append(
+                {"category": "prosody", "text": "；".join(parts)})
+
+    report_sentences = []
+    result_by_sentence = {row["句号"]: row for row in sent_results}
+    for sent in sentences:
+        sid = sent["句号"]
+        result = result_by_sentence[sid]
+        sentence_words = [wb for wb in word_bounds if wb.get("句号") == sid]
+        local_words = [dict(wb, a=wb["a"] - sent["a"], b=wb["b"] - sent["a"])
+                       for wb in sentence_words]
+        local_text_ph = text_ph[sent["a"]:sent["b"]]
+
+        def _word_observations(tokens, frame_values, token_ids):
+            selected_tokens = [tokens[i] for i in token_ids if 0 <= i < len(tokens)]
+            selected_frames = [frame_values[i] for i in token_ids if 0 <= i < len(frame_values)]
+            owners = cp.map_words_to_audio(local_text_ph, selected_tokens, local_words)
+            observations = [[] for _ in local_words]
+            for token, frame, owner in zip(selected_tokens, selected_frames, owners):
+                if 0 <= owner < len(observations):
+                    observations[owner].append((token, frame * cp.FRAME_MS))
+            return observations
+
+        student_observations = _word_observations(
+            mine, frames_map["我的模仿"], sent["_mine"])
+        word_rows = []
+        for wi, wb in enumerate(sentence_words):
+            expected = text_ph[wb["a"]:wb["b"]]
+            student_observed = student_observations[wi] if wi < len(student_observations) else []
+            issues = []
+            for diff in result.get("差异") or []:
+                phone_index = diff.get("音素下标")
+                if phone_index is not None and not (wb["a"] <= phone_index < wb["b"]):
+                    continue
+                label = diff.get("词") or ""
+                if phone_index is None and wb["word"] not in label:
+                    continue
+                category = "sound_change" if diff.get("类别") == "口音型" else "pronunciation"
+                expected_phone = diff.get("应读") or None
+                heard_phone = diff.get("实读") or None
+                what = ("%s 读成了 %s" % (expected_phone, heard_phone) if heard_phone
+                        else "%s 未读出" % expected_phone) if expected_phone else "发音未能确认"
+                issues.append({"category": category, "expected": expected_phone,
+                               "heard": heard_phone, "what": what,
+                               "how": diff.get("要领") or None})
+
+            word_rows.append({
+                "text": wb["word"],
+                "ipa": " ".join(expected) or None,
+                "student_ipa": " ".join(token for token, _ in student_observed) or None,
+                "student_ms": ([int(min(t for _, t in student_observed)),
+                                int(max(t for _, t in student_observed) + cp.FRAME_MS)]
+                               if student_observed else None),
+                "issues": issues,
+            })
+
+        # Word-level transcription is auxiliary; only explicit insertions/deletions are emitted.
+        aligned_words = word_align.get(sid) or []
+        assigned = set()
+        last_word = 0
+        for item in aligned_words:
+            kind = item.get("类型")
+            if kind == "读对" or not word_rows:
+                if kind == "读对":
+                    last_word = min(last_word + 1, len(word_rows) - 1)
+                continue
+            original = (item.get("原词") or "").casefold()
+            target = next((i for i, row in enumerate(word_rows)
+                           if i not in assigned and row["text"].casefold() == original), None)
+            if target is None:
+                target = min(last_word, len(word_rows) - 1)
+            if kind in ("漏读", "读错", "多读"):
+                word_rows[target]["issues"].append({
+                    "category": "word", "expected": item.get("原词") or None,
+                    "heard": item.get("实读") or None,
+                    "what": ("漏读 %s" % item["原词"] if kind == "漏读" else
+                             "多读 %s" % item["实读"] if kind == "多读" else
+                             "%s 读成了 %s" % (item["原词"], item["实读"])),
+                    "how": None,
+                })
+                if kind != "多读":
+                    assigned.add(target)
+                    last_word = target
+
+        report_sentences.append({
+            "index": sid,
+            "text": result["文本"],
+            "missed": result["漏句"],
+            "reference_ms": _frame_interval(sent["_ref"], frames_map["原音频"]),
+            "student_ms": _frame_interval(sent["_mine"], frames_map["我的模仿"]),
+            "words": word_rows,
+            "hints": sentence_hints.get(sid, []),
+        })
+
+    with open(STRUCTURED_REPORT, "w", encoding="utf-8") as f:
+        json.dump(build_report(report_sentences), f, ensure_ascii=False, indent=2)
 
     # ---- 人读报告 ----
     L = []
